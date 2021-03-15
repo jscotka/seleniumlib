@@ -1,1 +1,1 @@
-from .base import SeleniumTest, visible, invisible, clickable, text_in, present
+from .base import SeleniumWrapper, SeleniumTest, visible, invisible, clickable, text_in, present

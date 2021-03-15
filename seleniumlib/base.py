@@ -36,7 +36,7 @@ from selenium.webdriver.remote.remote_connection import LOGGER
 import os
 import time
 import subprocess
-from avocado import Test
+from unittest import TestCase
 from .timeoutlib import Retry
 from .machine_core import ssh_connection
 from .exceptions import SeleniumFailure, SeleniumDriverFailure, SeleniumElementFailure,\
@@ -63,14 +63,13 @@ present = EC.presence_of_element_located
 text_in = EC.text_to_be_present_in_element
 
 
-class SeleniumTest(Test):
-    """
-    :avocado: disable
-    """
-
+class SeleniumWrapper:
     RETRY_LOOP_SLEEP = 0.5
     PAGE_LOAD_TIMEOUT = 120
     PAGE_SIZE = [1400, 1200]
+
+    def __init__(self):
+        self.log = LOGGER
 
     def _selenium_logging(self, method, *args):
         transformed_arg_list = list()
@@ -83,7 +82,7 @@ class SeleniumTest(Test):
                 transformed_arg_list.append(str(arg))
         self.log.info("SELENIUM {}: ".format(method) + " ".join(transformed_arg_list))
 
-    def setUp(self):
+    def _setup(self):
         selenium_hub = os.environ.get("HUB", "localhost")
         browser = os.environ.get("BROWSER", "firefox")
         guest_machine = os.environ.get("GUEST", "localhost")
@@ -157,7 +156,8 @@ class SeleniumTest(Test):
             suffix = (str(sep.join(stackinfo)) + sep if stackinfo else "") + datesuffix
         return "screenshot{}{}.png".format(sep, suffix)
 
-    def take_screenshot(self, filename=None, phase="", fatal=True, get_debug_logs_if_fail=True, relative_path=actualpath):
+    def take_screenshot(self, filename=None, phase="", fatal=True, get_debug_logs_if_fail=True,
+                        relative_path=actualpath):
         if not filename:
             filename = self._get_screenshot_name()
         try:
@@ -178,7 +178,7 @@ class SeleniumTest(Test):
             else:
                 self.log.info(msg)
 
-    def tearDown(self):
+    def _teardown(self):
         # take screenshot every time to ensure that if test fails there will be debugging info
         # in case it assert in some condition, not directly inside elements
         # and logic of when transfer images is up to scheduler
@@ -248,8 +248,12 @@ class SeleniumTest(Test):
             self.take_screenshot(fatal=False)
             raise SeleniumElementFailure('Unable to SEND_KEYS to element ({})'.format(e))
         if javascript_operations:
-            self.execute_script('var ev = new Event("change", { bubbles: true, cancelable: false }); arguments[0].dispatchEvent(ev);', element)
-            self.execute_script('var ev = new Event("change", { bubbles: true, cancelable: false }); arguments[0].dispatchEvent(ev);', element)
+            self.execute_script(
+                'var ev = new Event("change", { bubbles: true, cancelable: false }); arguments[0].dispatchEvent(ev);',
+                element)
+            self.execute_script(
+                'var ev = new Event("change", { bubbles: true, cancelable: false }); arguments[0].dispatchEvent(ev);',
+                element)
 
     def check_box(self, element, checked=True):
         self._selenium_logging("check box select", element)
@@ -338,7 +342,8 @@ parameters:
                                        text,
                                        cond,
                                        "(reverse cond)" if reversed_cond else "",
-                                       "(text inside:{} is fatal:{}, wait data-loaded:{})".format(text_, fatal, wait_data_loaded))
+                                       "(text inside:{} is fatal:{}, wait data-loaded:{})".format(text_, fatal,
+                                                                                                  wait_data_loaded))
                 if foo > 0:
                     self._selenium_logging("element lookup retry {}".format(foo))
                 returned = usedfunction()
@@ -359,18 +364,24 @@ parameters:
         return returned
 
     def wait_id(self, el, baseelement=None, overridetry=None, fatal=True, cond=None, text_=None, reversed_cond=False):
-        return self.wait(By.ID, text=el, baseelement=baseelement, overridetry=overridetry, fatal=fatal, cond=cond, wait_data_loaded=False, text_=text_, reversed_cond=reversed_cond)
+        return self.wait(By.ID, text=el, baseelement=baseelement, overridetry=overridetry, fatal=fatal, cond=cond,
+                         wait_data_loaded=False, text_=text_, reversed_cond=reversed_cond)
 
     def wait_link(self, el, baseelement=None, overridetry=None, fatal=True, cond=None, text_=None, reversed_cond=False):
-        return self.wait(By.PARTIAL_LINK_TEXT, baseelement=baseelement, text=el, overridetry=overridetry, fatal=fatal, cond=cond, wait_data_loaded=False, text_=text_, reversed_cond=reversed_cond)
+        return self.wait(By.PARTIAL_LINK_TEXT, baseelement=baseelement, text=el, overridetry=overridetry, fatal=fatal,
+                         cond=cond, wait_data_loaded=False, text_=text_, reversed_cond=reversed_cond)
 
     def wait_css(self, el, baseelement=None, overridetry=None, fatal=True, cond=None, text_=None, reversed_cond=False):
-        return self.wait(By.CSS_SELECTOR, text=el, baseelement=baseelement, overridetry=overridetry, fatal=fatal, cond=cond, wait_data_loaded=False, text_=text_, reversed_cond=reversed_cond)
+        return self.wait(By.CSS_SELECTOR, text=el, baseelement=baseelement, overridetry=overridetry, fatal=fatal,
+                         cond=cond, wait_data_loaded=False, text_=text_, reversed_cond=reversed_cond)
 
-    def wait_xpath(self, el, baseelement=None, overridetry=None, fatal=True, cond=None, text_=None, reversed_cond=False):
-        return self.wait(By.XPATH, text=el, baseelement=baseelement, overridetry=overridetry, fatal=fatal, cond=cond, wait_data_loaded=False, text_=text_, reversed_cond=reversed_cond)
+    def wait_xpath(self, el, baseelement=None, overridetry=None, fatal=True, cond=None, text_=None,
+                   reversed_cond=False):
+        return self.wait(By.XPATH, text=el, baseelement=baseelement, overridetry=overridetry, fatal=fatal, cond=cond,
+                         wait_data_loaded=False, text_=text_, reversed_cond=reversed_cond)
 
-    def wait_text(self, el, nextel="", element="*", baseelement=None, overridetry=None, fatal=True, cond=None, reversed_cond=False):
+    def wait_text(self, el, nextel="", element="*", baseelement=None, overridetry=None, fatal=True, cond=None,
+                  reversed_cond=False):
         search_string = ""
         search_string_next = ""
         elem = None
@@ -385,14 +396,18 @@ parameters:
             else:
                 search_string_next = search_string_next + ' and contains(text(), "%s")' % foo
         if nextel:
-            elem = self.wait_xpath("//%s[%s]/following-sibling::%s[%s]" % (element, search_string, element, search_string_next), baseelement=baseelement, overridetry=overridetry, fatal=fatal, cond=cond, reversed_cond=reversed_cond)
+            elem = self.wait_xpath(
+                "//%s[%s]/following-sibling::%s[%s]" % (element, search_string, element, search_string_next),
+                baseelement=baseelement, overridetry=overridetry, fatal=fatal, cond=cond, reversed_cond=reversed_cond)
         else:
-            elem = self.wait_xpath("//%s[%s]" % (element, search_string), baseelement=baseelement, overridetry=overridetry, fatal=fatal, cond=cond, reversed_cond=reversed_cond)
+            elem = self.wait_xpath("//%s[%s]" % (element, search_string), baseelement=baseelement,
+                                   overridetry=overridetry, fatal=fatal, cond=cond, reversed_cond=reversed_cond)
         return elem
 
     def wait_frame(self, el, baseelement=None, overridetry=None, fatal=True, cond=None, reversed_cond=False):
         text = "//iframe[contains(@name,'%s')]" % el
-        return self.wait(By.XPATH, text=text, baseelement=baseelement, overridetry=overridetry, fatal=fatal, cond=frame, wait_data_loaded=True, text_=None, reversed_cond=reversed_cond)
+        return self.wait(By.XPATH, text=text, baseelement=baseelement, overridetry=overridetry, fatal=fatal, cond=frame,
+                         wait_data_loaded=True, text_=None, reversed_cond=reversed_cond)
 
     def mainframe(self):
         self._selenium_logging("return to main frame")
@@ -405,7 +420,8 @@ parameters:
     def login(self, tmpuser=user, tmppasswd=passwd, wait_hostapp=True, add_ssh_key=True, authorized=True):
         self.send_keys(self.wait_id('login-user-input'), tmpuser)
         self.send_keys(self.wait_id('login-password-input'), tmppasswd)
-        self.execute_script('window.localStorage.setItem("superuser:%s", "%s");' % (tmpuser, "any" if authorized else "none"))
+        self.execute_script(
+            'window.localStorage.setItem("superuser:%s", "%s");' % (tmpuser, "any" if authorized else "none"))
         self.click(self.wait_id("login-button", cond=clickable))
         if wait_hostapp:
             self.wait_id("host-apps")
@@ -428,7 +444,8 @@ parameters:
 
         old_ssh_user = self.machine.ssh_user
         self.machine.ssh_user = "root"
-        self.machine.execute("mkdir -p /home/%s/.ssh/ && echo '%s' >>/home/%s/.ssh/authorized_keys" % (user, ssh_public_key, user))
+        self.machine.execute(
+            "mkdir -p /home/%s/.ssh/ && echo '%s' >>/home/%s/.ssh/authorized_keys" % (user, ssh_public_key, user))
         self.machine.ssh_user = old_ssh_user
 
     def logout(self):
@@ -452,7 +469,8 @@ parameters:
         if page_frame:
             self.wait_frame(page_frame)
 
-    def prepare_machine_execute(self, tmpuser=user, tmppassword=passwd, ssh_adress=None, ssh_port=None, identity_file=None, verbose=None):
+    def prepare_machine_execute(self, tmpuser=user, tmppassword=passwd, ssh_adress=None, ssh_port=None,
+                                identity_file=None, verbose=None):
         """
         return machine and add key there if  necessary via cockpit UI,
         """
@@ -468,3 +486,12 @@ parameters:
             self.logout()
             return machine
         return self.machine
+
+
+class SeleniumTest(TestCase, SeleniumWrapper):
+
+    def setUp(self):
+        self._setup()
+
+    def tearDown(self):
+        self._teardown()
