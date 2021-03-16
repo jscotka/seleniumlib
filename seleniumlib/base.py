@@ -25,6 +25,7 @@ HUB=localhost BROWSER=chrome GUEST=`hostname -i` avocado run selenium-login.py
 
 import inspect
 import logging
+import shutil
 import selenium.webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.support import expected_conditions as EC
@@ -98,13 +99,16 @@ class SeleniumWrapper:
         if not os.path.exists(identity_file):
             raise FileNotFoundError("IDENTITY envvar does not contain file to proper private key,"
                                     " or {} file does not exist".format(identity_file))
+        # Copy identity file to better location to be able to change attributes
+        identity_file_new_location = os.path.realpath(os.path.join(os.path.curdir, "_cockpit_" + identity_file))
+        shutil.copy(identity_file, identity_file_new_location)
         # ensure that private key has proper file attributes
-        os.chmod(identity_file, 0o600)
+        os.chmod(identity_file_new_location, 0o600)
         self.ssh_identity_file = identity_file
         self.machine = ssh_connection.SSHConnection(user=user,
                                                     address=ssh_adress,
                                                     ssh_port=ssh_port,
-                                                    identity_file=identity_file,
+                                                    identity_file=identity_file_new_location,
                                                     verbose=False)
         if browser == 'edge':
             browser = 'MicrosoftEdge'
