@@ -100,7 +100,7 @@ class SeleniumWrapper:
             raise FileNotFoundError("IDENTITY envvar does not contain file to proper private key,"
                                     " or {} file does not exist".format(identity_file))
         # Copy identity file to better location to be able to change attributes
-        identity_file_new_location = os.path.realpath(os.path.join(os.path.curdir, "_cockpit_" + identity_file))
+        identity_file_new_location = os.path.realpath(os.path.join(os.path.curdir, "_cockpit_ssh_identity_key"))
         shutil.copy(identity_file, identity_file_new_location)
         # ensure that private key has proper file attributes
         os.chmod(identity_file_new_location, 0o600)
