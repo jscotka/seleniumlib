@@ -84,6 +84,7 @@ class SeleniumWrapper:
         self.log.info("SELENIUM {}: ".format(method) + " ".join(transformed_arg_list))
 
     def _setup(self):
+        self.log = LOGGER
         selenium_hub = os.environ.get("HUB", "localhost")
         browser = os.environ.get("BROWSER", "firefox")
         guest_machine = os.environ.get("GUEST", "localhost")
