@@ -7,4 +7,4 @@ clean:
 	find . -name \*.pyc -exec rm {} \;
 
 prepare:
-	git clone https://github.com/cockpit-project/bots.git
+	git clone -q https://github.com/cockpit-project/bots.git
