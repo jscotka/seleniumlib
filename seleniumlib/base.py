@@ -50,7 +50,8 @@ passwd = "superhardpasswordtest5554"
 actualpath = "."
 IDENTITY_FILE = "identity"
 
-LOGGER.setLevel(logging.DEBUG)
+
+LOGGER.setLevel(getattr(logging, os.getenv("DEBUG_LEVEL", "INFO")))
 
 # use javascript to generate clicks in the browsers and add more javascript checks for elements
 # this prevents races where the test clicks in the wrong place because the page layout changed
