@@ -120,7 +120,9 @@ class SeleniumWrapper:
             if browser == "firefox":
                 self.driver = selenium.webdriver.Firefox()
             elif browser == "chrome":
-                self.driver = selenium.webdriver.Chrome()
+                opts = Options()
+                opts.add_argument('--no-sandbox')
+                self.driver = selenium.webdriver.Chrome(chrome_options=opts)
             elif browser == 'MicrosoftEdge':
                 self.driver = selenium.webdriver.Edge()
             elif browser == 'chromium':
