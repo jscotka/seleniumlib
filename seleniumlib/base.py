@@ -26,6 +26,7 @@ HUB=localhost BROWSER=chrome GUEST=`hostname -i` avocado run selenium-login.py
 import inspect
 import logging
 import shutil
+import getpass
 import selenium.webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.support import expected_conditions as EC
@@ -121,12 +122,17 @@ class SeleniumWrapper:
                 self.driver = selenium.webdriver.Firefox()
             elif browser == "chrome":
                 opts = Options()
-                opts.add_argument('--no-sandbox')
+                if getpass.getuser() == "root":
+                    # workaround to be able to run chrome also as root inside CI
+                    opts.add_argument('--no-sandbox')
                 self.driver = selenium.webdriver.Chrome(chrome_options=opts)
             elif browser == 'MicrosoftEdge':
                 self.driver = selenium.webdriver.Edge()
             elif browser == 'chromium':
                 opts = Options()
+                if getpass.getuser() == "root":
+                    # workaround to be able to run chrome also as root inside CI
+                    opts.add_argument('--no-sandbox')
                 opts.binary_location = "/usr/bin/chromium-browser"
                 self.driver = selenium.webdriver.Chrome(chrome_options=opts)
         else:
