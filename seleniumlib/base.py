@@ -34,6 +34,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.remote.remote_connection import LOGGER
+from selenium.webdriver.chrome.options import Options
 import os
 import time
 import subprocess
@@ -122,6 +123,10 @@ class SeleniumWrapper:
                 self.driver = selenium.webdriver.Chrome()
             elif browser == 'MicrosoftEdge':
                 self.driver = selenium.webdriver.Edge()
+            elif browser == 'chromium':
+                opts = Options()
+                opts.binary_location = "/usr/bin/chromium-browser"
+                self.driver = selenium.webdriver.Chrome(chrome_options=opts)
         else:
             @Retry(attempts=3, timeout=30,
                    exceptions=(WebDriverException,),
