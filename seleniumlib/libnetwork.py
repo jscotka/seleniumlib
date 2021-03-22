@@ -26,7 +26,11 @@ import subprocess
 import warnings
 from unittest import TestCase
 
-from avocado.utils import process
+
+class process:
+    @classmethod
+    def run(cls, command, **kwargs):
+        return subprocess.check_output(command, **kwargs)
 
 
 class Network():
