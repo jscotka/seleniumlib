@@ -447,25 +447,24 @@ parameters:
         if add_ssh_key and not self.check_machine_execute():
             self.add_authorised_ssh_key_to_user(user=tmpuser)
 
-    def add_authorised_ssh_key_to_user(self, pub_key=None, user=user):
+    def add_authorised_ssh_key_to_user(self, pub_key=None):
         if pub_key is None:
             pub_key = self.ssh_identity_file
         ssh_public_key = open("%s.pub" % pub_key).read()
-
-        # When we are called, self.machine.ssh_user is usually the
-        # "test" user, but that user can't log in yet via SSH until we
-        # have added the key here. Thus, we temporarily switch to
-        # "root" for the copy.
-        #
-        # (It would be nice if self.machine.execute had a "user"
-        # parameter, but it's probably not worth changing that just
-        # for this fringe use case here.)
-
-        old_ssh_user = self.machine.ssh_user
-        self.machine.ssh_user = "root"
-        self.machine.execute(
-            "mkdir -p /home/%s/.ssh/ && echo '%s' >>/home/%s/.ssh/authorized_keys" % (user, ssh_public_key, user))
-        self.machine.ssh_user = old_ssh_user
+        ssh_key_name = ssh_public_key.rsplit(" ", 1)[1]
+        self.click(self.wait_id("content-user-name", cond=clickable))
+        self.click(self.wait_id("go-account", cond=clickable))
+        self.wait_frame('users')
+        # put key just in case it is not already there
+        if not self.wait_xpath("//div[@class='comment' and contains(text(), '%s')]" % ssh_key_name,
+                               fatal=False,
+                               overridetry=3,
+                               cond=visible):
+            self.click(self.wait_id("authorized-key-add", cond=clickable))
+            self.send_keys(self.wait_id("authorized-keys-text", cond=visible), ssh_public_key)
+            self.click((self.wait_id("add-authorized-key", cond=clickable)))
+            self.wait_id("authorized-key-add", cond=clickable)
+        self.mainframe()
 
     def logout(self):
         self.mainframe()
