@@ -27,6 +27,7 @@ import inspect
 import logging
 import shutil
 import pwd
+import sys
 import selenium.webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.support import expected_conditions as EC
@@ -34,7 +35,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
-from selenium.webdriver.remote.remote_connection import LOGGER
 from selenium.webdriver.chrome.options import Options
 import os
 import time
@@ -51,9 +51,6 @@ passwd = "superhardpasswordtest5554"
 # path for storing selenium screenshots
 actualpath = "."
 IDENTITY_FILE = "identity"
-
-
-LOGGER.setLevel(getattr(logging, os.getenv("DEBUG_LEVEL", "INFO")))
 
 # use javascript to generate clicks in the browsers and add more javascript checks for elements
 # this prevents races where the test clicks in the wrong place because the page layout changed
@@ -72,8 +69,9 @@ class SeleniumWrapper:
     PAGE_LOAD_TIMEOUT = 120
     PAGE_SIZE = [1400, 1200]
 
-    def __init__(self):
-        self.log = LOGGER
+    def log_info(self, *args):
+        print(*args, file=sys.stderr)
+
 
     def _selenium_logging(self, method, *args):
         transformed_arg_list = list()
@@ -84,10 +82,9 @@ class SeleniumWrapper:
                 transformed_arg_list.append(arg.get_attribute('outerHTML').split(">", 1)[0] + ">")
             else:
                 transformed_arg_list.append(str(arg))
-        self.log.info("SELENIUM {}: ".format(method) + " ".join(transformed_arg_list))
+        self.log_info("SELENIUM {}: ".format(method) + " ".join(transformed_arg_list))
 
     def _setup(self):
-        self.log = LOGGER
         selenium_hub = os.environ.get("HUB", "localhost")
         browser = os.environ.get("BROWSER", "firefox")
         guest_machine = os.environ.get("GUEST", "localhost")
@@ -181,13 +178,13 @@ class SeleniumWrapper:
             filename = self._get_screenshot_name()
         try:
             self.driver.save_screenshot(os.path.join(relative_path, filename))
-            self.log.info("Screenshot({}) - Wrote: {}".format(phase, filename))
+            self.log_info("Screenshot({}) - Wrote: {}".format(phase, filename))
 
             # get HTML page output for better debugging of issues
             html_file_path = os.path.join(relative_path, filename + ".html")
             with open(html_file_path, 'w') as output:
                 output.write(self.driver.page_source)
-                self.log.info("Html page content dump ({}) - Wrote: {}".format(phase, html_file_path))
+                self.log_info("Html page content dump ({}) - Wrote: {}".format(phase, html_file_path))
         except WebDriverException as e:
             msg = 'Unable to store ({}) screenshot: {} (Exception: {})'.format(phase, filename, e)
             if get_debug_logs_if_fail:
@@ -195,7 +192,7 @@ class SeleniumWrapper:
             if fatal:
                 raise SeleniumScreenshotFailure(msg)
             else:
-                self.log.info(msg)
+                self.log_info(msg)
 
     def _teardown(self):
         # take screenshot every time to ensure that if test fails there will be debugging info
@@ -205,7 +202,7 @@ class SeleniumWrapper:
         try:
             self.driver.quit()
         except WebDriverException as e:
-            self.log.info('Unable to quit WEBdriver: {0}'.format(e))
+            self.log_info('Unable to quit WEBdriver: {0}'.format(e))
 
     def get_debug_logs(self, logs=None):
         if logs is None:
@@ -215,11 +212,11 @@ class SeleniumWrapper:
             for log in logs:
                 receivedlog = [x for x in self.driver.get_log(log)][-max_line_log_count:]
                 if receivedlog:
-                    self.log.info(">>>>> " + log)
+                    self.log_info(">>>>> " + log)
                     for line in receivedlog:
-                        self.log.info("      {0}".format(line))
+                        self.log_info("      {0}".format(line))
         except WebDriverException as e:
-            self.log.info("ERR: Unable to get logs: " + e.msg)
+            self.log_info("ERR: Unable to get logs: " + e.msg)
 
     def execute_script(self, *args, fatal=True):
         self._selenium_logging("execute javascript", *args)
@@ -231,7 +228,7 @@ class SeleniumWrapper:
                 self.take_screenshot(fatal=False)
                 raise SeleniumJSFailure(msg)
             else:
-                self.log.info(msg)
+                self.log_info(msg)
 
     def click(self, element):
         failure = "CLICK: too many tries"
@@ -369,7 +366,7 @@ parameters:
                 if wait_data_loaded and isinstance(returned, selenium.webdriver.remote.webelement.WebElement):
                     if self.driver.execute_script("return arguments[0].getAttribute('data-loaded')", returned):
                         break
-                    self.log.info("element does not yet have data-loaded=1, retrying")
+                    self.log_info("element does not yet have data-loaded=1, retrying")
                 else:
                     break
             except WebDriverException:
