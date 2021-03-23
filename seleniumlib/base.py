@@ -447,24 +447,44 @@ parameters:
         if add_ssh_key and not self.check_machine_execute():
             self.add_authorised_ssh_key_to_user(user=tmpuser)
 
-    def add_authorised_ssh_key_to_user(self, pub_key=None):
+    def add_authorised_ssh_key_to_user_another(self, pub_key=None, user=user):
+        if pub_key is None:
+            pub_key = self.ssh_identity_file
+        ssh_public_key = open("%s.pub" % pub_key).read()
+
+        # When we are called, self.machine.ssh_user is usually the
+        # "test" user, but that user can't log in yet via SSH until we
+        # have added the key here. Thus, we temporarily switch to
+        # "root" for the copy.
+        #
+        # (It would be nice if self.machine.execute had a "user"
+        # parameter, but it's probably not worth changing that just
+        # for this fringe use case here.)
+
+        self.machine.execute(
+            "mkdir -p /home/%s/.ssh/ && echo '%s' >>/home/%s/.ssh/authorized_keys" % (user, ssh_public_key, user))
+
+    def add_authorised_ssh_key_to_user(self, pub_key=None, user=user):
         if pub_key is None:
             pub_key = self.ssh_identity_file
         ssh_public_key = open("%s.pub" % pub_key).read()
         ssh_key_name = ssh_public_key.rsplit(" ", 1)[1]
-        self.click(self.wait_id("content-user-name", cond=clickable))
-        self.click(self.wait_id("go-account", cond=clickable))
+
+        self.click(self.wait_link('Accounts', cond=clickable))
         self.wait_frame('users')
+        self.click(self.wait_text("Your account", cond=clickable))
+        self.wait_id("account")
         # put key just in case it is not already there
-        if not self.wait_xpath("//div[@class='comment' and contains(text(), '%s')]" % ssh_key_name,
-                               fatal=False,
-                               overridetry=3,
-                               cond=visible):
+        time.sleep(3)
+        key_element = self.wait_id("account-authorized-keys-list", fatal=False, overridetry=3, cond=visible)
+        if not (key_element and ssh_key_name in key_element.text):
             self.click(self.wait_id("authorized-key-add", cond=clickable))
             self.send_keys(self.wait_id("authorized-keys-text", cond=visible), ssh_public_key)
-            self.click((self.wait_id("add-authorized-key", cond=clickable)))
+            self.click((self.wait_css("#add-authorized-key-dialog > footer > button.pf-c-button.pf-m-primary.apply", cond=clickable)))
             self.wait_id("authorized-key-add", cond=clickable)
         self.mainframe()
+        if user != "test":
+            self.add_authorised_ssh_key_to_user_another(pub_key=pub_key, user=user)
 
     def logout(self):
         self.mainframe()
@@ -486,25 +506,6 @@ parameters:
             self.click(frame_element_activation)
         if page_frame:
             self.wait_frame(page_frame)
-
-    def prepare_machine_execute(self, tmpuser=user, tmppassword=passwd, ssh_adress=None, ssh_port=None,
-                                identity_file=None, verbose=None):
-        """
-        return machine and add key there if  necessary via cockpit UI,
-        """
-        machine = ssh_connection.SSHConnection(user=user,
-                                               address=ssh_adress or self.machine.ssh_address,
-                                               ssh_port=ssh_port or self.machine.ssh_port,
-                                               identity_file=identity_file or self.machine.identity_file,
-                                               verbose=verbose or self.machine.verbose
-                                               )
-
-        if not self.check_machine_execute(machine=machine):
-            self.login(tmpuser=tmpuser, tmppasswd=tmppassword)
-            self.logout()
-            return machine
-        return self.machine
-
 
 class SeleniumTest(TestCase, SeleniumWrapper):
 
