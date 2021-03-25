@@ -458,7 +458,7 @@ parameters:
         # parameter, but it's probably not worth changing that just
         # for this fringe use case here.)
 
-        self.machine.execute(
+        self.execute(
             "mkdir -p /home/%s/.ssh/ && echo '%s' >>/home/%s/.ssh/authorized_keys" % (user, ssh_public_key, user))
 
     def add_authorised_ssh_key_to_user(self, pub_key=None, user=user):
@@ -503,6 +503,20 @@ parameters:
             self.click(frame_element_activation)
         if page_frame:
             self.wait_frame(page_frame)
+
+    def execute(self, command=None, script=None, input=None, environment={}, stdout=None, quiet=False, direct=True, timeout=120, ssh_env=["env", "-u", "LANGUAGE", "LC_ALL=C"], fail=True):
+        self.log_info(f"MACHINE EXECUTE: {command or script} (INPUT: {input}, ENV: {environment})")
+        try:
+            out = self.machine.execute(command=command, script=script, environment=environment, stdout=stdout, quiet=quiet, direct=direct, timeout=timeout, ssh_env=ssh_env)
+        except subprocess.CalledProcessError as e:
+            if fail:
+                raise e
+            else:
+                out="!! COMMAND FAILED !!"
+        if not quiet:
+            self.log_info(f"OUTPUT:")
+            self.log_info(out)
+        return out
 
 class SeleniumTest(TestCase, SeleniumWrapper):
 
