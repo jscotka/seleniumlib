@@ -24,7 +24,7 @@ HUB=localhost BROWSER=chrome GUEST=`hostname -i` avocado run selenium-login.py
 """
 
 import inspect
-import logging
+import tempfile
 import shutil
 import pwd
 import sys
@@ -95,21 +95,22 @@ class SeleniumWrapper:
         url_base = os.environ.get("URL_BASE", "http")
         local_testing = os.environ.get("LOCAL", "no")  # use "yes" to test via local browsers
         identity_file = os.environ.get("IDENTITY")
+        self.no_ssh_key_adding = os.environ.get("NO_SSH_KEY")
         if not identity_file:
             identity_file = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), IDENTITY_FILE))
         if not os.path.exists(identity_file):
             raise FileNotFoundError("IDENTITY envvar does not contain file to proper private key,"
                                     " or {} file does not exist".format(identity_file))
         # Copy identity file to better location to be able to change attributes
-        identity_file_new_location = os.path.realpath(os.path.join(os.path.curdir, "_cockpit_ssh_identity_key"))
-        shutil.copy(identity_file, identity_file_new_location)
+        self.identity_file_new_location = os.path.realpath(os.path.join(os.path.curdir, f"_cockpit_ssh_identity_key_{os.path.basename(tempfile.mktemp())}"))
+        shutil.copy(identity_file, self.identity_file_new_location)
         # ensure that private key has proper file attributes
-        os.chmod(identity_file_new_location, 0o600)
+        os.chmod(self.identity_file_new_location, 0o600)
         self.ssh_identity_file = identity_file
         self.machine = ssh_connection.SSHConnection(user=user,
                                                     address=ssh_adress,
                                                     ssh_port=ssh_port,
-                                                    identity_file=identity_file_new_location,
+                                                    identity_file=self.identity_file_new_location,
                                                     verbose=False)
         if browser == 'edge':
             browser = 'MicrosoftEdge'
@@ -434,6 +435,8 @@ parameters:
             raise SeleniumDriverFailure('Unable to return to main web context ({})'.format(e))
 
     def login(self, tmpuser=user, tmppasswd=passwd, wait_hostapp=True, add_ssh_key=True, authorized=True):
+        if self.no_ssh_key_adding:
+            add_ssh_key=False
         self.send_keys(self.wait_id('login-user-input'), tmpuser)
         self.send_keys(self.wait_id('login-password-input'), tmppasswd)
         self.execute_script(
