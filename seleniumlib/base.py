@@ -143,7 +143,7 @@ class SeleniumWrapper:
                    error=SeleniumDriverFailure('Timeout: Unable to attach remote Browser on hub'))
             def connect_browser():
                 self.driver = selenium.webdriver.Remote(command_executor='http://%s:4444/wd/hub' % selenium_hub,
-                                                        desired_capabilities={'browserName': browser})
+                                                        desired_capabilities={'browserName': browser, "acceptInsecureCerts": True})
 
             connect_browser()
         self.driver.set_window_size(*self.PAGE_SIZE)
