@@ -117,9 +117,12 @@ class SeleniumWrapper:
         # allow_localhost testing
         if local_testing == "yes":
             if browser == "firefox":
-                self.driver = selenium.webdriver.Firefox()
+                profile = selenium.webdriver.FirefoxProfile()
+                profile.accept_untrusted_certs = True
+                self.driver = selenium.webdriver.Firefox(firefox_profile=profile)
             elif browser == "chrome":
                 opts = Options()
+                opts.add_argument('ignore-certificate-errors')
                 if pwd.getpwuid(os.getuid())[0] == "root":
                     # workaround to be able to run chrome also as root inside CI
                     opts.add_argument('--no-sandbox')
@@ -128,6 +131,7 @@ class SeleniumWrapper:
                 self.driver = selenium.webdriver.Edge()
             elif browser == 'chromium':
                 opts = Options()
+                opts.add_argument('ignore-certificate-errors')
                 if pwd.getpwuid(os.getuid())[0] == "root":
                     # workaround to be able to run chrome also as root inside CI
                     opts.add_argument('--no-sandbox')
