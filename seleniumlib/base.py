@@ -35,7 +35,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver import EdgeOptions, ChromeOptions, FirefoxOptions
 import os
 import time
 import subprocess
@@ -117,26 +117,29 @@ class SeleniumWrapper:
         # allow_localhost testing
         if local_testing == "yes":
             if browser == "firefox":
-                profile = selenium.webdriver.FirefoxProfile()
-                profile.accept_untrusted_certs = True
-                self.driver = selenium.webdriver.Firefox(firefox_profile=profile)
+                options = FirefoxOptions()
+                options.accept_insecure_certs = True
+                self.driver = selenium.webdriver.Firefox(options=options)
             elif browser == "chrome":
-                opts = Options()
-                opts.add_argument('ignore-certificate-errors')
+                options = ChromeOptions()
+                options.accept_insecure_certs = True
                 if pwd.getpwuid(os.getuid())[0] == "root":
                     # workaround to be able to run chrome also as root inside CI
-                    opts.add_argument('--no-sandbox')
-                self.driver = selenium.webdriver.Chrome(chrome_options=opts)
+                    options.add_argument('--no-sandbox')
+                self.driver = selenium.webdriver.Chrome(options=options)
             elif browser == 'MicrosoftEdge':
+                options = EdgeOptions()
+                options.accept_insecure_certs = True
                 self.driver = selenium.webdriver.Edge()
             elif browser == 'chromium':
-                opts = Options()
-                opts.add_argument('ignore-certificate-errors')
+                options = ChromeOptions
+                options.accept_insecure_certs = True
+                options.add_argument('ignore-certificate-errors')
                 if pwd.getpwuid(os.getuid())[0] == "root":
                     # workaround to be able to run chrome also as root inside CI
-                    opts.add_argument('--no-sandbox')
-                opts.binary_location = "/usr/bin/chromium-browser"
-                self.driver = selenium.webdriver.Chrome(chrome_options=opts)
+                    options.add_argument('--no-sandbox')
+                options.binary_location = "/usr/bin/chromium-browser"
+                self.driver = selenium.webdriver.Chrome(options=options)
         else:
             @Retry(attempts=3, timeout=30,
                    exceptions=(WebDriverException,),
