@@ -132,9 +132,9 @@ class SeleniumWrapper:
                 options.accept_insecure_certs = True
                 self.driver = selenium.webdriver.Edge()
             elif browser == 'chromium':
-                options = ChromeOptions
+                options = ChromeOptions()
                 options.accept_insecure_certs = True
-                options.add_argument('ignore-certificate-errors')
+                #options.add_argument('ignore-certificate-errors')
                 if pwd.getpwuid(os.getuid())[0] == "root":
                     # workaround to be able to run chrome also as root inside CI
                     options.add_argument('--no-sandbox')
