@@ -495,8 +495,11 @@ parameters:
 
     def logout(self):
         self.mainframe()
-        self.click(self.wait_id('navbar-dropdown', cond=clickable))
-        self.click(self.wait_id('go-logout', cond=clickable))
+        #self.click(self.wait_id('navbar-dropdown', cond=clickable))
+        #self.click(self.wait_id('go-logout', cond=clickable))
+        self.click(self.wait_id('toggle-menu', cond=clickable))
+        self.click(self.wait_id('logout', cond=clickable))
+
 
     def check_machine_execute(self, timeout=5, machine=None):
         if not machine:
